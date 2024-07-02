@@ -1,0 +1,175 @@
+<style>
+    body {
+        background-image: url('https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcWFsOXlkOGkyejYxY2RpOWpwOWF4eGFjcmE2bmY3bHppOWZuNG1ycyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OK5LK5zLFfdm/giphy.webp');
+        background-repeat: no-repeat;
+        background-size: cover;
+        font-family: Arial, sans-serif;
+    }
+
+    button {
+        font-size: 1.2rem;
+        padding: 0.8rem 1.6rem;
+        border-radius: 0.4rem;
+        background-color: #333;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin: 5px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    button:hover {
+        background-color: #555;
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    .card {
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: 0 auto;
+        border: 2px solid #b37848;
+        animation: cardAnimation 1s ease-in-out;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    @keyframes cardAnimation {
+        0% {
+            transform: scale(0.5);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .card h2 {
+        margin-top: 0;
+        color: #333;
+        text-align: center;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .card p {
+        margin: 10px 0;
+        color: #666;
+        text-align: center;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+<script src="/static/js/app.js"></script>
+
+<h1>Thunder Market Alpha</h1>
+
+<div id="taskInfoCard" class="card" style="display: none;">
+    <h2>Current Task Information</h2>
+    <p id="taskDescription"></p>
+    <p id="taskReward"></p>
+    <p id="taskLock"></p>
+</div>
+
+<button onclick="getAndDisplayTaskInfo()">Refresh Task Info</button>
+<button onclick="showCreateTaskForm()">Create Task</button>
+<button onclick="handleCloseTask()">Close Task</button>
+<button onclick="handleReset()">Reset</button>
+<button onclick="showFulfillTaskForm()">Fulfill Task</button>
+
+<div id="createTaskForm" style="display: none;">
+    <input type="text" id="taskDescriptionInput" placeholder="Task Description">
+    <input type="number" id="taskRewardInput" placeholder="Reward (in ETH)">
+    <button onclick="createTaskFromForm()">Submit Task</button>
+</div>
+
+<div id="fulfillTaskForm" style="display: none;">
+    <input type="text" id="taskUrls" placeholder="URLs (comma-separated)">
+    <button onclick="fulfillTaskFromForm()">Submit URLs</button>
+</div>
+
+<script>
+    async function getAndDisplayTaskInfo() {
+        try {
+            const taskInfo = await getTaskInfo();
+            document.getElementById('taskInfoCard').style.display = 'block';
+            document.getElementById('taskDescription').textContent = `Description: ${taskInfo.taskDescription}`;
+            document.getElementById('taskReward').textContent = `Reward: ${web3.utils.fromWei(taskInfo.reward, 'ether')} ETH`;
+            document.getElementById('taskLock').textContent = `Locked: ${taskInfo.lock}`;
+        } catch (error) {
+            console.error('Error getting task info:', error);
+            alert('Failed to get task info. Please try again.');
+        }
+    }
+
+    function showCreateTaskForm() {
+        document.getElementById('createTaskForm').style.display = 'block';
+    }
+
+    async function createTaskFromForm() {
+        const description = document.getElementById('taskDescriptionInput').value;
+        const reward = document.getElementById('taskRewardInput').value;
+        try {
+            await createTask(description, reward);
+            document.getElementById('createTaskForm').style.display = 'none';
+            getAndDisplayTaskInfo();
+        } catch (error) {
+            console.error('Error creating task:', error);
+            alert('Failed to create task. Please try again.');
+        }
+    }
+
+    function showFulfillTaskForm() {
+        document.getElementById('fulfillTaskForm').style.display = 'block';
+    }
+
+    async function fulfillTaskFromForm() {
+        const urls = document.getElementById('taskUrls').value.split(',').map(url => url.trim());
+        try {
+            await attemptFullfillTask(urls);
+            document.getElementById('fulfillTaskForm').style.display = 'none';
+            getAndDisplayTaskInfo();
+        } catch (error) {
+            console.error('Error fulfilling task:', error);
+            alert('Failed to fulfill task. Please try again.');
+        }
+    }
+
+    async function handleCloseTask() {
+        try {
+            await closeTask();
+            getAndDisplayTaskInfo();
+        } catch (error) {
+            console.error('Error closing task:', error);
+            alert('Failed to close task. Please try again.');
+        }
+    }
+
+    async function handleReset() {
+        try {
+            await resetTask();
+            getAndDisplayTaskInfo();
+        } catch (error) {
+            console.error('Error resetting:', error);
+            alert('Failed to reset. Please try again.');
+        }
+    }
+
+    // Initialize the page
+    window.onload = async function() {
+        await connectWeb3();
+        getAndDisplayTaskInfo();
+    };
+</script>
